@@ -51,6 +51,7 @@ func initConfig() {
 
 func initRouter() {
 	r := gin.Default()
+	//r.Use(middlewares.GlobalExceptionCapture(), gin.Logger())
 	// 注册路由
 	router.RegisterRouter(r)
 	var addr string

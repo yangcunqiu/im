@@ -9,8 +9,9 @@ type User struct {
 	Phone            string `gorm:"type:varchar(255);comment:手机号"`
 	PhoneAttribution string `gorm:"type:varchar(255);comment:手机号归属地"`
 	Email            string `gorm:"type:varchar(255);comment:邮箱"`
-	IsAdmin          bool   `gorm:"comment:是否是管理员"`
-	IsLogin          bool   `gorm:"comment:当前是否登录"`
+	Area
+	IsAdmin bool `gorm:"comment:是否是管理员"`
+	IsLogin bool `gorm:"comment:当前是否登录"`
 }
 
 func (user *User) TableName() string {
