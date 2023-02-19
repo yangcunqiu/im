@@ -1,22 +1,63 @@
 package main
 
 import (
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/locales/zh"
+	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
+	zh2 "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"im/global"
 	"im/model"
 	"im/router"
 	"log"
+	"os"
+	"reflect"
 	"strconv"
+	"strings"
+	"time"
 )
 
 func main() {
 	initConfig()
 	initDB()
+	initTran()
 	initRouter()
+}
+
+// 初始化validate的中文翻译器
+func initTran() {
+	// 创建翻译器
+	uni := ut.New(zh.New())
+	// 获取中文简体翻译器
+	trans, _ := uni.GetTranslator("zh")
+	// 判断gin默认的校验引擎是不是validate
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// 注册中文简体翻译器
+		_ = zh2.RegisterDefaultTranslations(v, trans)
+		// 注册func, 获取struct中自定义的tag (label), 在输出时会将label的值作为字段名
+		v.RegisterTagNameFunc(func(field reflect.StructField) string {
+			jsonName := field.Tag.Get("json")
+			if jsonName == "" {
+				jsonName = field.Name
+			} else {
+				jsonName = strings.Split(jsonName, ",")[0]
+			}
+
+			name := field.Tag.Get("label")
+			if name == "" {
+				return jsonName
+			}
+			return name + fmt.Sprintf("[%v]", jsonName)
+		})
+	}
+	global.Trans = trans
 }
 
 // 初始化配置
@@ -67,8 +108,18 @@ func initRouter() {
 }
 
 func initDB() {
+	// gorm日志
+	gormLogger := logger.New(
+		log.New(os.Stdout, "/r/n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold: time.Second, // 慢SQL阈值
+			LogLevel:      logger.Info,
+			Colorful:      true,
+		},
+	)
 	db, err := gorm.Open(mysql.Open(getDsn()), &gorm.Config{
-		DisableForeignKeyConstraintWhenMigrating: true,
+		DisableForeignKeyConstraintWhenMigrating: true, // 禁用外键
+		Logger:                                   gormLogger,
 	})
 	if err != nil {
 		panic(err)
@@ -107,6 +158,7 @@ func syncTable() {
 	err := global.DB.AutoMigrate(
 		&model.User{},
 		&model.UserLoginInfo{},
+		&model.District{},
 	)
 	if err != nil {
 		panic(err)

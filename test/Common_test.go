@@ -18,3 +18,18 @@ func TestGetBrowser(t *testing.T) {
 	browser := utils.GetBrowserByUserAgent(userAgent)
 	fmt.Println(browser)
 }
+
+func TestEncode(t *testing.T) {
+	str := ""
+	salt := ""
+	sha256 := utils.EncodeBySHA256(str, salt)
+	fmt.Println(sha256)
+}
+
+func TestDecode(t *testing.T) {
+	plaintext := ""
+	sourceCiphertext := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	salt := "1"
+	ok := utils.VailPasswordBySHA256(plaintext, sourceCiphertext, salt)
+	fmt.Println(ok)
+}

@@ -15,10 +15,20 @@ func RegisterRouter(r *gin.Engine) {
 	})
 
 	routerGroup := r.Group(global.Config.Server.ContextPath)
+	{
+		commonGroup := routerGroup.Group("/common")
+		{
+			commonGroup.GET("/district/list", service.GetDistrictList)
+		}
 
-	userGroup := routerGroup.Group("/user")
-	userGroup.GET("/list", service.GetUserList)
-	userGroup.GET("/:id", service.GetUser)
-	userGroup.POST("/register", service.RegisterUser)
+		userGroup := routerGroup.Group("/user")
+		{
+			userGroup.GET("/list", service.GetUserList)
+			userGroup.GET("/:id", service.GetUser)
+			userGroup.POST("/register", service.RegisterUser)
+			userGroup.POST("/update", service.UpdateUser)
+			userGroup.POST("/updatePassword", service.UpdatePassword)
+		}
+	}
 
 }

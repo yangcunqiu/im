@@ -12,6 +12,12 @@ type UserInfoVO struct {
 	Email            string    `json:"email,omitempty"`
 	IsAdmin          bool      `json:"isAdmin,omitempty"`
 	IsLogin          bool      `json:"isLogin,omitempty"`
+	ProvinceId       uint      `gorm:"comment:省id"`
+	ProvinceName     uint      `gorm:"comment:省名称"`
+	CityId           uint      `gorm:"comment:市id"`
+	CityName         uint      `gorm:"comment:市名称"`
+	DistrictId       uint      `gorm:"comment:区id"`
+	DistrictName     uint      `gorm:"comment:区名称"`
 	ClientIP         string    `json:"clientIP,omitempty"`
 	IPAttribution    string    `json:"IPAttribution,omitempty"`
 	LastLoginTime    time.Time `json:"lastLoginTime"`

@@ -14,9 +14,13 @@ func Success(c *gin.Context, data any) {
 	})
 }
 
-func Fail(c *gin.Context, errorResult model.ErrorResult) {
+func Fail(c *gin.Context, errorResult model.ErrorResult, customErrorMessage string) {
+	errorMessage := errorResult.ErrorMessage
+	if customErrorMessage != "" {
+		errorMessage += ": " + customErrorMessage
+	}
 	c.JSON(http.StatusOK, model.ApiResult{
 		Code:    errorResult.ErrorCode,
-		Message: errorResult.ErrorMessage,
+		Message: errorMessage,
 	})
 }
