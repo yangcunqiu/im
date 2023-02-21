@@ -18,5 +18,5 @@ func GetDistrictList(c *gin.Context) {
 	list := dao.GetDistrictList()
 
 	// 转成树形结构
-	handler.Success(c, utils.ListToTree(list, uint(pid)))
+	handler.Success(c, utils.ListToTree(list, pid))
 }

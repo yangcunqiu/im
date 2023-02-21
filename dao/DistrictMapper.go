@@ -5,8 +5,8 @@ import (
 	"im/model"
 )
 
-func GetDistrictList() []model.District {
-	districtList := make([]model.District, 0)
-	global.DB.Find(&districtList)
+func GetDistrictList() []model.TreeNode {
+	districtList := make([]model.TreeNode, 0)
+	global.DB.Raw("select * from district").Scan(&districtList)
 	return districtList
 }
