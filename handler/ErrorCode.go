@@ -6,6 +6,11 @@ var (
 	// 通用错误 100
 	InternalServerError = model.ErrorOf(10000, "服务器异常")
 	ParamsBindingError  = model.ErrorOf(10001, "参数填写错误")
+	TokenEmptyError     = model.ErrorOf(10002, "token为空")
+	TokenMalformedError = model.ErrorOf(10003, "token错误")
+	TokenExpiredError   = model.ErrorOf(10004, "token过期")
+	TokenNoTActiveError = model.ErrorOf(10005, "token是非活动的")
+	TokenParseError     = model.ErrorOf(10006, "token解析失败")
 	// 用户模块错误 200
 	UserNotFoundByIdError              = model.ErrorOf(20000, "用户不存在")
 	SaveUserError                      = model.ErrorOf(20001, "保存用户出错")
@@ -16,4 +21,5 @@ var (
 	UserLoginPhoneOrCodeEmptyError     = model.ErrorOf(20006, "手机号或验证码不能为空")
 	UserLoginTypeError                 = model.ErrorOf(20007, "登录方式错误")
 	UserLoginNameOrPasswordVailError   = model.ErrorOf(20008, "用户名或密码错误")
+	UserLoginError                     = model.ErrorOf(20009, "登录失败")
 )

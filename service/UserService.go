@@ -1,8 +1,8 @@
 package service
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
 	"im/dao"
 	"im/global"
@@ -13,6 +13,7 @@ import (
 	"im/utils"
 	"log"
 	"strconv"
+	"time"
 )
 
 func GetUserList(c *gin.Context) {
@@ -221,6 +222,7 @@ func UpdatePassword(c *gin.Context) {
 func Login(c *gin.Context) {
 	var userLoginReq request.UserLoginReq
 	if err := c.ShouldBindJSON(&userLoginReq); err != nil {
+		log.Println("参数绑定错误, err:", err)
 		handler.Fail(c, handler.ParamsBindingError, "")
 		return
 	}
@@ -243,8 +245,38 @@ func Login(c *gin.Context) {
 		handler.Fail(c, *errorRes, "")
 		return
 	}
-	// 生成token
-	fmt.Println(user)
+
+	// 校验通过 生成token
+	token, err := makeToken(*user)
+	if err != nil {
+		handler.Fail(c, handler.UserLoginError, "")
+		log.Println("jwt生成token失败, err:", err)
+		return
+	}
+
+	// 修改用户状态
+	user.IsLogin = true
+	dao.UpdateUser(user)
+	handler.Success(c, token)
+}
+
+func makeToken(user model.User) (string, error) {
+	claim := model.MyClaims{
+		ID:    user.ID,
+		Name:  user.Name,
+		Phone: user.Phone,
+		Email: user.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			// 过期时间
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(global.Config.Jwt.ExpirationTime) * time.Second)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+	// jwt生成token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+	// 签名
+	return token.SignedString([]byte(global.Config.Jwt.Secret))
 }
 
 func loginByNameAndPassword(req request.UserLoginReq) (*model.User, *model.ErrorResult) {

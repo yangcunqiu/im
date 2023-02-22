@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"im/global"
+	"im/middlewares"
 	"im/service"
 	"net/http"
 )
@@ -16,18 +17,26 @@ func RegisterRouter(r *gin.Engine) {
 
 	routerGroup := r.Group(global.Config.Server.ContextPath)
 	{
-		commonGroup := routerGroup.Group("/common")
+		allowGroup := routerGroup.Group("/allow")
 		{
-			commonGroup.GET("/district/list", service.GetDistrictList)
+			allowGroup.POST("user/login", service.Login)
+			allowGroup.POST("user/register", service.RegisterUser)
 		}
 
-		userGroup := routerGroup.Group("/user")
+		OAuthGroup := routerGroup.Group("", middlewares.ValidationToken())
 		{
-			userGroup.GET("/list", service.GetUserList)
-			userGroup.GET("/:id", service.GetUser)
-			userGroup.POST("/register", service.RegisterUser)
-			userGroup.POST("/update", service.UpdateUser)
-			userGroup.POST("/updatePassword", service.UpdatePassword)
+			commonGroup := OAuthGroup.Group("/common")
+			{
+				commonGroup.GET("/district/list", service.GetDistrictList)
+			}
+
+			userGroup := OAuthGroup.Group("/user", middlewares.ValidationToken())
+			{
+				userGroup.GET("/list", service.GetUserList)
+				userGroup.GET("/:id", service.GetUser)
+				userGroup.POST("/update", service.UpdateUser)
+				userGroup.POST("/updatePassword", service.UpdatePassword)
+			}
 		}
 	}
 

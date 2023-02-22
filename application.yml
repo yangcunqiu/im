@@ -8,3 +8,6 @@ mysql:
   params: charset=utf8mb4&parseTime=True&loc=Local
   username: root
   password: pass1234
+jwt:
+  secret: lghlmcl
+  expirationTime: 10800
