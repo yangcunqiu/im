@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"im/dao"
@@ -215,4 +216,75 @@ func UpdatePassword(c *gin.Context) {
 
 	// TODO 修改成功 手机号发短信 邮箱发短信
 	handler.Success(c, "")
+}
+
+func Login(c *gin.Context) {
+	var userLoginReq request.UserLoginReq
+	if err := c.ShouldBindJSON(&userLoginReq); err != nil {
+		handler.Fail(c, handler.ParamsBindingError, "")
+		return
+	}
+
+	// 根据登录方式校验必填
+	if !vailLoginType(c, userLoginReq) {
+		return
+	}
+
+	// TODO 多次登录失败错误 锁定账号
+	loginType := userLoginReq.LoginType
+	errorRes := new(model.ErrorResult)
+	user := &model.User{}
+	if loginType == 1 {
+		// 用户名 密码登录
+		user, errorRes = loginByNameAndPassword(userLoginReq)
+	}
+
+	if errorRes != nil {
+		handler.Fail(c, *errorRes, "")
+		return
+	}
+	// 生成token
+	fmt.Println(user)
+}
+
+func loginByNameAndPassword(req request.UserLoginReq) (*model.User, *model.ErrorResult) {
+	user := &model.User{}
+	user, err := dao.GetUserByName(req.Name)
+	if err != nil {
+		return user, &handler.UserLoginNameOrPasswordVailError
+	}
+	encodePassword := utils.EncodeBySHA256(req.Password, user.Salt)
+	if encodePassword != user.Password {
+		return user, &handler.UserLoginNameOrPasswordVailError
+	}
+	return user, nil
+}
+
+func vailLoginType(c *gin.Context, userLoginReq request.UserLoginReq) bool {
+	name := userLoginReq.Name
+	email := userLoginReq.Email
+	password := userLoginReq.Password
+	phone := userLoginReq.Phone
+	code := userLoginReq.Code
+	switch userLoginReq.LoginType {
+	case 1:
+		if name == "" || password == "" {
+			handler.Fail(c, handler.UserLoginNameOrPasswordEmptyError, "")
+			return false
+		}
+	case 2:
+		if email == "" || password == "" {
+			handler.Fail(c, handler.UserLoginEmailOrPasswordEmptyError, "")
+			return false
+		}
+	case 3:
+		if phone == "" || code == "" {
+			handler.Fail(c, handler.UserLoginPhoneOrCodeEmptyError, "")
+			return false
+		}
+	default:
+		handler.Fail(c, handler.UserLoginTypeError, "")
+		return false
+	}
+	return true
 }
