@@ -12,7 +12,7 @@ type CallLog struct {
 	MethodType    string    `gorm:"type:varchar(10);not null;comment:方法类型"`
 	ServiceType   string    `gorm:"type:varchar(20);not null;comment:业务类型"`
 	InvokeStatus  int       `gorm:"type:int;not null;comment:调用状态"`
-	ServiceStatus int       `gorm:"type:int;not null;comment:业务状态"`
+	ServiceStatus string    `gorm:"type:varchar(20);not null;comment:业务状态"`
 	RequestStr    string    `gorm:"type:longtext;comment:请求报文"`
 	RequestTime   time.Time `gorm:"comment:请求时间"`
 	ResponseStr   string    `gorm:"type:longtext;comment:响应报文"`

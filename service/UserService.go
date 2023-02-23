@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/gorm"
@@ -50,9 +51,8 @@ func GetUser(c *gin.Context) {
 	id, _ := strconv.Atoi(idStr)
 
 	// 查询用户
-	user, err := dao.GetUser(uint(id))
-	if err != nil {
-		log.Println(err)
+	user, ok := dao.GetUser(uint(id))
+	if !ok {
 		handler.Fail(c, handler.UserNotFoundByIdError, "")
 		return
 	}
@@ -85,8 +85,8 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	_, err := dao.GetUserByName(createUserReq.Name)
-	if err == nil {
+	_, ok := dao.GetUserByName(createUserReq.Name)
+	if ok {
 		// 重复
 		handler.Fail(c, handler.UserNameSameError, "")
 		return
@@ -114,7 +114,7 @@ func RegisterUser(c *gin.Context) {
 	}
 
 	// 开启事务
-	err = global.DB.Transaction(func(tx *gorm.DB) error {
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
 		if err := dao.CreateUser(tx, &user); err != nil {
 			return err
 		}
@@ -161,8 +161,8 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	_, err := dao.GetUserByName(updateUserReq.Name)
-	if err == nil {
+	_, ok := dao.GetUserByName(updateUserReq.Name)
+	if ok {
 		// 重复
 		handler.Fail(c, handler.UserNameSameError, "")
 		return
@@ -193,8 +193,8 @@ func UpdatePassword(c *gin.Context) {
 	}
 
 	// 校验密码是否一致
-	userById, err := dao.GetUser(updateUserPasswordReq.ID)
-	if err != nil {
+	userById, ok := dao.GetUser(updateUserPasswordReq.ID)
+	if !ok {
 		handler.Fail(c, handler.UserNotFoundByIdError, "")
 		return
 	}
@@ -283,8 +283,8 @@ func makeToken(user model.User) (string, error) {
 
 func loginByNameAndPassword(req request.UserLoginReq) (*model.User, *model.ErrorResult) {
 	user := &model.User{}
-	user, err := dao.GetUserByName(req.Name)
-	if err != nil {
+	user, ok := dao.GetUserByName(req.Name)
+	if !ok {
 		return user, &handler.UserLoginNameOrPasswordVailError
 	}
 	encodePassword := utils.EncodeBySHA256(req.Password, user.Salt)
@@ -330,6 +330,35 @@ func BindingPhone(c *gin.Context) {
 		return
 	}
 
+	// 权限校验
+	if bindingPhoneReq.UserId != global.User.ID {
+		handler.Fail(c, handler.OAuthVerifyError, "")
+		return
+	}
+
 	// 手机号重复校验
+	if _, ok := dao.GetUserByPhone(bindingPhoneReq.Phone); ok {
+		handler.Fail(c, handler.UserPhoneSameError, "")
+		return
+	}
+
+	// 校验验证码
+	code, err := global.RDB.Get(context.Background(), bindingPhoneReq.Phone).Result()
+	if bindingPhoneReq.Code != code {
+		handler.Fail(c, handler.VerifyCodeError, err.Error())
+		return
+	}
+
+	user, ok := dao.GetUser(global.User.ID)
+	if !ok {
+		handler.Fail(c, handler.OAuthVerifyError, "")
+		return
+	}
+
+	// 更新
+	// TODO 查询手机号归属地
+	user.Phone = bindingPhoneReq.Phone
+
+	dao.UpdateUser(user)
 	handler.Success(c, bindingPhoneReq.Phone)
 }

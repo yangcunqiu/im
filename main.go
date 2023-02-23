@@ -9,6 +9,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	zh2 "github.com/go-playground/validator/v10/translations/zh"
+	"github.com/go-redis/redis/v8"
 	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
@@ -29,6 +30,7 @@ import (
 func main() {
 	initConfig()
 	initDB()
+	InitRedis()
 	initOtherConfig()
 	initTran()
 	initRouter()
@@ -46,7 +48,16 @@ func initTran() {
 	trans, _ := uni.GetTranslator("zh")
 	// 判断gin默认的校验引擎是不是validate
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// 注册自定义tag校验
 		_ = v.RegisterValidation("IsPhone", request.IsPhone)
+		// 注册自定义tag翻译
+		_ = v.RegisterTranslation("IsPhone", trans, func(ut ut.Translator) error {
+			return ut.Add("IsPhone", "手机号格式不正确, 请输入正确的手机号", true)
+		}, func(ut ut.Translator, fe validator.FieldError) string {
+			t, _ := ut.T("IsPhone")
+			return t
+		})
+
 		// 注册中文简体翻译器
 		_ = zh2.RegisterDefaultTranslations(v, trans)
 		// 注册func, 获取struct中自定义的tag (label), 在输出时会将label的值作为字段名
@@ -174,4 +185,13 @@ func syncTable() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// 初始化redis
+func InitRedis() {
+	global.RDB = redis.NewClient(&redis.Options{
+		Addr:     global.Config.Redis.IP + ":" + strconv.Itoa(global.Config.Redis.Port),
+		Password: global.Config.Redis.Password,
+		DB:       global.Config.Redis.DB, // use default DB
+	})
 }

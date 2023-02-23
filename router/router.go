@@ -28,6 +28,7 @@ func RegisterRouter(r *gin.Engine) {
 			commonGroup := OAuthGroup.Group("/common")
 			{
 				commonGroup.GET("/district/list", service.GetDistrictList)
+				commonGroup.GET("/phone/send/code", service.SendPhoneVerifyCode)
 			}
 
 			userGroup := OAuthGroup.Group("/user", middlewares.ValidationToken())

@@ -8,6 +8,11 @@ mysql:
   params: charset=utf8mb4&parseTime=True&loc=Local
   username: root
   password: pass1234
+redis:
+  ip: 106.14.18.18
+  port: 6379
+  password: pass1234
+  DB: 0
 jwt:
   secret: lghlmcl
   expirationTime: 10800
@@ -17,3 +22,5 @@ third:
     phoneAttributionUrl: https://jshmgsdmfb.market.alicloudapi.com/shouji/query
     ipAttributionUrl: https://qryip.market.alicloudapi.com/lundear/qryip
     phoneSendVerifyCodeUrl: https://dfsns.market.alicloudapi.com/data/send_sms
+    phoneSendVerifyCodeTemplateId: TPL_0001
+    phoneVerifyCodeExpireMin: 30

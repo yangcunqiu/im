@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -35,7 +36,7 @@ func TestHttpPost(t *testing.T) {
 	expire := 5
 	templateId := "TPL_0001"
 	values := url.Values{
-		"content":      {"code:" + code + ",expire_at:" + string(rune(expire))},
+		"content":      {"code:" + code + ",expire_at:" + strconv.Itoa(expire)},
 		"phone_number": {phone},
 		"template_id":  {templateId},
 	}

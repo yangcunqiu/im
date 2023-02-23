@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var serviceType = "IP归属地查询"
+var IPServiceType = "IP归属地查询"
 
 func QueryIPAttribution(ip string) string {
 	startTime := time.Now()
@@ -29,11 +29,12 @@ func QueryIPAttribution(ip string) string {
 			Type:          1,
 			Url:           global.Config.Third.Aliyun.IPAttributionUrl,
 			MethodType:    "GET",
-			ServiceType:   serviceType,
+			ServiceType:   IPServiceType,
 			InvokeStatus:  -1,
-			ServiceStatus: -1,
+			ServiceStatus: "-1",
 			ErrorString:   err.Error(),
 			RequestTime:   startTime,
+			ResponseTime:  startTime,
 			Cost:          cost,
 		}
 		dao.AddCallLog(callLog)
@@ -46,9 +47,9 @@ func QueryIPAttribution(ip string) string {
 		Type:          1,
 		Url:           global.Config.Third.Aliyun.IPAttributionUrl,
 		MethodType:    "GET",
-		ServiceType:   serviceType,
+		ServiceType:   IPServiceType,
 		InvokeStatus:  resp.StatusCode(),
-		ServiceStatus: ipAttr.Status,
+		ServiceStatus: string(rune(ipAttr.Status)),
 		RequestStr:    resp.Request.QueryParam.Encode(),
 		RequestTime:   startTime,
 		ResponseStr:   string(marshal),

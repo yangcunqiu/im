@@ -19,14 +19,14 @@ func GetUserList(offset int, limit int, name string) ([]model.User, int64) {
 	return userList, total
 }
 
-func GetUser(id uint) (*model.User, error) {
+func GetUser(id uint) (*model.User, bool) {
 	user := model.User{}
 	err := global.DB.First(&user, id).Error
 	// go的结构体是值类型, 没有查到也会有默认值, 需要检查一下是否是没有查到
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return nil, false
 	}
-	return &user, nil
+	return &user, true
 }
 
 func CreateUser(tx *gorm.DB, user *model.User) error {
@@ -37,11 +37,20 @@ func UpdateUser(user *model.User) {
 	global.DB.Model(&user).Updates(user)
 }
 
-func GetUserByName(name string) (*model.User, error) {
+func GetUserByName(name string) (*model.User, bool) {
 	user := model.User{}
 	err := global.DB.Where("name = ?", name).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
+		return nil, false
 	}
-	return &user, nil
+	return &user, true
+}
+
+func GetUserByPhone(phone string) (model.User, bool) {
+	user := model.User{}
+	err := global.DB.Where("phone = ?", phone).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return user, false
+	}
+	return user, true
 }
