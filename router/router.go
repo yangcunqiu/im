@@ -28,6 +28,7 @@ func RegisterRouter(r *gin.Engine) {
 			userGroup.POST("/register", service.RegisterUser)
 			userGroup.POST("/update", service.UpdateUser)
 			userGroup.POST("/updatePassword", service.UpdatePassword)
+			userGroup.POST("/bindingPhone", service.BindingPhone)
 		}
 	}
 

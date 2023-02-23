@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm/logger"
 	"im/global"
 	"im/model"
+	"im/model/request"
 	"im/router"
 	"log"
 	"os"
@@ -45,6 +46,7 @@ func initTran() {
 	trans, _ := uni.GetTranslator("zh")
 	// 判断gin默认的校验引擎是不是validate
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		_ = v.RegisterValidation("IsPhone", request.IsPhone)
 		// 注册中文简体翻译器
 		_ = zh2.RegisterDefaultTranslations(v, trans)
 		// 注册func, 获取struct中自定义的tag (label), 在输出时会将label的值作为字段名
