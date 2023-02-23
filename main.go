@@ -98,6 +98,8 @@ func initConfig() {
 
 func initRouter() {
 	r := gin.Default()
+	// 用作测试IP, c.ClientIP()方法会将header中key是test-ip的值作为ip返回
+	r.TrustedPlatform = "test-ip"
 	// r.Use(middlewares.GlobalExceptionCapture(), gin.Logger())
 	// 注册路由
 	router.RegisterRouter(r)
