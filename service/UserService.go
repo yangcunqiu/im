@@ -294,7 +294,8 @@ func vailLoginType(c *gin.Context, userLoginReq request.UserLoginReq) bool {
 func BindingPhone(c *gin.Context) {
 	var bindingPhoneReq request.BindingPhoneReq
 	if err := c.ShouldBindJSON(&bindingPhoneReq); err != nil {
-		handler.Fail(c, handler.ParamsBindingError, "")
+		handler.Fail(c, handler.ParamsBindingError, handler.SimpleValidateErrorTran(err))
+		return
 	}
 
 	// 手机号重复校验
