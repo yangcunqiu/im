@@ -2,6 +2,7 @@ package global
 
 import (
 	ut "github.com/go-playground/universal-translator"
+	"github.com/go-resty/resty/v2"
 	"gorm.io/gorm"
 	"im/config"
 	"im/model"
@@ -12,4 +13,5 @@ var (
 	Config config.Config
 	Trans  ut.Translator
 	User   model.User
+	HttpClient *resty.Client
 )

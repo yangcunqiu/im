@@ -9,12 +9,14 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	zh2 "github.com/go-playground/validator/v10/translations/zh"
+	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"im/global"
 	"im/model"
+	"im/model/request"
 	"im/router"
 	"log"
 	"os"
@@ -27,8 +29,13 @@ import (
 func main() {
 	initConfig()
 	initDB()
+	initOtherConfig()
 	initTran()
 	initRouter()
+}
+
+func initOtherConfig() {
+	global.HttpClient = resty.New()
 }
 
 // 初始化validate的中文翻译器
@@ -39,6 +46,7 @@ func initTran() {
 	trans, _ := uni.GetTranslator("zh")
 	// 判断gin默认的校验引擎是不是validate
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		_ = v.RegisterValidation("IsPhone", request.IsPhone)
 		// 注册中文简体翻译器
 		_ = zh2.RegisterDefaultTranslations(v, trans)
 		// 注册func, 获取struct中自定义的tag (label), 在输出时会将label的值作为字段名
@@ -92,7 +100,9 @@ func initConfig() {
 
 func initRouter() {
 	r := gin.Default()
-	//r.Use(middlewares.GlobalExceptionCapture(), gin.Logger())
+	// 用作测试IP, c.ClientIP()方法会将header中key是test-ip的值作为ip返回
+	r.TrustedPlatform = "test-ip"
+	// r.Use(middlewares.GlobalExceptionCapture(), gin.Logger())
 	// 注册路由
 	router.RegisterRouter(r)
 	var addr string
@@ -159,6 +169,7 @@ func syncTable() {
 		&model.User{},
 		&model.UserLoginInfo{},
 		&model.District{},
+		&model.CallLog{},
 	)
 	if err != nil {
 		panic(err)

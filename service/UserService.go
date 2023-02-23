@@ -7,6 +7,7 @@ import (
 	"im/dao"
 	"im/global"
 	"im/handler"
+	"im/invoke"
 	"im/model"
 	"im/model/request"
 	"im/model/vo"
@@ -121,10 +122,11 @@ func RegisterUser(c *gin.Context) {
 		// 解析请求
 		loginInfo := analysisRequest(c)
 		userLoginInfo := model.UserLoginInfo{
-			UserId:    user.ID,
-			ClientIP:  loginInfo.ClientIP,
-			OSVersion: loginInfo.OSVersion,
-			Browser:   loginInfo.Browser,
+			UserId:        user.ID,
+			ClientIP:      loginInfo.ClientIP,
+			IPAttribution: invoke.QueryIPAttribution(loginInfo.ClientIP),
+			OSVersion:     loginInfo.OSVersion,
+			Browser:       loginInfo.Browser,
 		}
 		if err := dao.CreateUserLoginInfo(tx, &userLoginInfo); err != nil {
 			return err
@@ -232,7 +234,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// TODO 多次登录失败错误 锁定账号
+	// TODO 多次登录失败错误 锁定账号 + 每次登录更新ip和归属 以及loginInfo中的最后登录时间
 	loginType := userLoginReq.LoginType
 	errorRes := new(model.ErrorResult)
 	user := &model.User{}
@@ -319,4 +321,15 @@ func vailLoginType(c *gin.Context, userLoginReq request.UserLoginReq) bool {
 		return false
 	}
 	return true
+}
+
+func BindingPhone(c *gin.Context) {
+	var bindingPhoneReq request.BindingPhoneReq
+	if err := c.ShouldBindJSON(&bindingPhoneReq); err != nil {
+		handler.Fail(c, handler.ParamsBindingError, handler.SimpleValidateErrorTran(err))
+		return
+	}
+
+	// 手机号重复校验
+	handler.Success(c, bindingPhoneReq.Phone)
 }

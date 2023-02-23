@@ -11,3 +11,9 @@ mysql:
 jwt:
   secret: lghlmcl
   expirationTime: 10800
+third:
+  aliyun:
+    appCode: c09d6e05b220456a98633777f423a800
+    phoneAttributionUrl: https://jshmgsdmfb.market.alicloudapi.com/shouji/query
+    ipAttributionUrl: https://qryip.market.alicloudapi.com/lundear/qryip
+    phoneSendVerifyCodeUrl: https://dfsns.market.alicloudapi.com/data/send_sms
