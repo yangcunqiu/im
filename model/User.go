@@ -7,7 +7,7 @@ type User struct {
 	Name             string `gorm:"type:varchar(255);not null;comment:用户名"`
 	Password         string `gorm:"type:varchar(256);not null;comment:密码"`
 	Salt             string `gorm:"type:char(32);not null;comment:salt"`
-	Phone            string `gorm:"type:varchar(255);comment:手机号"`
+	Phone            string `gorm:"type:char(11);comment:手机号"`
 	PhoneAttribution string `gorm:"type:varchar(255);comment:手机号归属地"`
 	Email            string `gorm:"type:varchar(255);comment:邮箱"`
 	Area

@@ -9,6 +9,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	zh2 "github.com/go-playground/validator/v10/translations/zh"
+	"github.com/go-resty/resty/v2"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -27,8 +28,13 @@ import (
 func main() {
 	initConfig()
 	initDB()
+	initOtherConfig()
 	initTran()
 	initRouter()
+}
+
+func initOtherConfig() {
+	global.HttpClient = resty.New()
 }
 
 // 初始化validate的中文翻译器
@@ -92,7 +98,7 @@ func initConfig() {
 
 func initRouter() {
 	r := gin.Default()
-	//r.Use(middlewares.GlobalExceptionCapture(), gin.Logger())
+	// r.Use(middlewares.GlobalExceptionCapture(), gin.Logger())
 	// 注册路由
 	router.RegisterRouter(r)
 	var addr string
@@ -159,6 +165,7 @@ func syncTable() {
 		&model.User{},
 		&model.UserLoginInfo{},
 		&model.District{},
+		&model.CallLog{},
 	)
 	if err != nil {
 		panic(err)

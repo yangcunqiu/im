@@ -8,3 +8,9 @@ mysql:
   params: charset=utf8mb4&parseTime=True&loc=Local
   username: root
   password: pass1234
+third:
+  aliyun:
+    appCode: c09d6e05b220456a98633777f423a800
+    phoneAttributionUrl: https://jshmgsdmfb.market.alicloudapi.com/shouji/query
+    ipAttributionUrl: https://qryip.market.alicloudapi.com/lundear/qryip
+    phoneSendVerifyCodeUrl: https://dfsns.market.alicloudapi.com/data/send_sms
