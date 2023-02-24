@@ -6,4 +6,6 @@ type Config struct {
 	Redis  Redis  `yaml:"redis"`
 	Jwt    Jwt    `yaml:"jwt"`
 	Third  Third  `yaml:"third"`
+	Email  Email  `yaml:"email"`
+	Regexp Regexp `yaml:"regexp"`
 }

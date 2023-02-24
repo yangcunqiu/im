@@ -54,3 +54,12 @@ func GetUserByPhone(phone string) (model.User, bool) {
 	}
 	return user, true
 }
+
+func GetUserByEmail(email string) (model.User, bool) {
+	user := model.User{}
+	err := global.DB.Where("email = ?", email).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return user, false
+	}
+	return user, true
+}

@@ -351,7 +351,7 @@ func BindingPhone(c *gin.Context) {
 
 	user, ok := dao.GetUser(global.User.ID)
 	if !ok {
-		handler.Fail(c, handler.OAuthVerifyError, "")
+		handler.Fail(c, handler.UserNotFoundByIdError, "")
 		return
 	}
 
@@ -361,4 +361,40 @@ func BindingPhone(c *gin.Context) {
 
 	dao.UpdateUser(user)
 	handler.Success(c, bindingPhoneReq.Phone)
+}
+
+func BindingEmail(c *gin.Context) {
+	var bindingEmailReq request.BindingEmailReq
+	if err := c.ShouldBindJSON(&bindingEmailReq); err != nil {
+		handler.Fail(c, handler.ParamsBindingError, handler.SimpleValidateErrorTran(err))
+		return
+	}
+
+	// 权限校验
+	if bindingEmailReq.UserId != global.User.ID {
+		handler.Fail(c, handler.OAuthVerifyError, "")
+		return
+	}
+
+	if _, ok := dao.GetUserByEmail(bindingEmailReq.Email); ok {
+		handler.Fail(c, handler.UserEmailSameError, "")
+		return
+	}
+
+	// 校验验证码
+	code, err := global.RDB.Get(context.Background(), bindingEmailReq.Email).Result()
+	if err != nil || bindingEmailReq.Code != code {
+		handler.Fail(c, handler.VerifyCodeError)
+		return
+	}
+
+	user, ok := dao.GetUser(global.User.ID)
+	if !ok {
+		handler.Fail(c, handler.UserNotFoundByIdError, "")
+		return
+	}
+
+	user.Email = bindingEmailReq.Email
+	dao.UpdateUser(user)
+	handler.Success(c, nil)
 }

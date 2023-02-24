@@ -29,6 +29,7 @@ func RegisterRouter(r *gin.Engine) {
 			{
 				commonGroup.GET("/district/list", service.GetDistrictList)
 				commonGroup.GET("/phone/send/code", service.SendPhoneVerifyCode)
+				commonGroup.GET("/email/send/code", service.SendEmailVerifyCode)
 			}
 
 			userGroup := OAuthGroup.Group("/user", middlewares.ValidationToken())
@@ -38,6 +39,7 @@ func RegisterRouter(r *gin.Engine) {
 				userGroup.POST("/update", service.UpdateUser)
 				userGroup.POST("/updatePassword", service.UpdatePassword)
 				userGroup.POST("/bindingPhone", service.BindingPhone)
+				userGroup.POST("/bindingEmail", service.BindingEmail)
 			}
 		}
 	}

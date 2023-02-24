@@ -11,6 +11,7 @@ import (
 	zh2 "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/go-redis/redis/v8"
 	"github.com/go-resty/resty/v2"
+	"github.com/jordan-wright/email"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -38,6 +39,7 @@ func main() {
 
 func initOtherConfig() {
 	global.HttpClient = resty.New()
+	global.EmailClient = email.NewEmail()
 }
 
 // 初始化validate的中文翻译器
