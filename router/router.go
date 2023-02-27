@@ -5,6 +5,7 @@ import (
 	"im/global"
 	"im/middlewares"
 	"im/service"
+	"im/ws"
 	"net/http"
 )
 
@@ -25,6 +26,11 @@ func RegisterRouter(r *gin.Engine) {
 
 		OAuthGroup := routerGroup.Group("", middlewares.ValidationToken())
 		{
+			wsGroup := OAuthGroup.Group("/ws")
+			{
+				wsGroup.GET("/wsHandler", ws.WsHandler)
+			}
+
 			commonGroup := OAuthGroup.Group("/common")
 			{
 				commonGroup.GET("/district/list", service.GetDistrictList)
