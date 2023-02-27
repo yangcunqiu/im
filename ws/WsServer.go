@@ -20,6 +20,13 @@ func createWsServer() *WsServer {
 	}
 }
 
+func (w WsServer) getCoonByUserId(userId uint) *websocket.Conn {
+	if coon, ok := w.userCoonMap[userId]; ok {
+		return coon
+	}
+	return nil
+}
+
 func (w WsServer) run() {
 	for {
 		select {

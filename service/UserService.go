@@ -13,6 +13,7 @@ import (
 	"im/model/request"
 	"im/model/vo"
 	"im/utils"
+	"im/ws"
 	"log"
 	"strconv"
 	"time"
@@ -397,4 +398,46 @@ func BindingEmail(c *gin.Context) {
 	user.Email = bindingEmailReq.Email
 	dao.UpdateUser(user)
 	handler.Success(c, nil)
+}
+
+func GetUserByName(c *gin.Context) {
+	name := c.Query("name")
+	if name == "" {
+		handler.Fail(c, handler.UserNameEmptyError, "")
+		return
+	}
+
+	userByName, ok := dao.GetUserByName(name)
+	if !ok {
+		handler.Fail(c, handler.UserNotFoundByNameError, "")
+		return
+	}
+	userVO := vo.UserInfoVO{
+		ID:               userByName.ID,
+		Name:             userByName.Name,
+		Phone:            userByName.Phone,
+		PhoneAttribution: userByName.PhoneAttribution,
+		Email:            userByName.Email,
+		IsAdmin:          userByName.IsAdmin,
+		IsLogin:          userByName.IsLogin,
+	}
+	handler.Success(c, userVO)
+}
+
+func AddFriend(c *gin.Context) {
+	var addFriend request.AddFriend
+	if err := c.ShouldBindJSON(&addFriend); err != nil {
+		handler.Fail(c, handler.ParamsBindingError, "")
+		return
+	}
+
+	_, ok := dao.GetUser(addFriend.UserId)
+	if !ok {
+		handler.Fail(c, handler.UserNotFoundByIdError, "")
+		return
+	}
+
+	// 发送添加好友请求
+	ws.AddFriend(&global.User, addFriend.UserId)
+	handler.Success(c, "")
 }

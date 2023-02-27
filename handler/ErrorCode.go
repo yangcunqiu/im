@@ -31,4 +31,6 @@ var (
 	UserEmailSameError                 = model.ErrorOf(20011, "邮箱已绑定")
 	PhoneVerifyError                   = model.ErrorOf(20012, "手机号格式错误")
 	EmailVerifyError                   = model.ErrorOf(20013, "邮箱格式错误")
+	UserNameEmptyError                 = model.ErrorOf(20014, "用户名不能为空")
+	UserNotFoundByNameError            = model.ErrorOf(20015, "用户未找到")
 )

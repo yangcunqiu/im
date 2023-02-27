@@ -46,6 +46,8 @@ func RegisterRouter(r *gin.Engine) {
 				userGroup.POST("/updatePassword", service.UpdatePassword)
 				userGroup.POST("/bindingPhone", service.BindingPhone)
 				userGroup.POST("/bindingEmail", service.BindingEmail)
+				userGroup.GET("/getUserByName", service.GetUserByName)
+				userGroup.POST("/addFriend", service.AddFriend)
 			}
 		}
 	}
