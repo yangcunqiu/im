@@ -33,4 +33,6 @@ var (
 	EmailVerifyError                   = model.ErrorOf(20013, "邮箱格式错误")
 	UserNameEmptyError                 = model.ErrorOf(20014, "用户名不能为空")
 	UserNotFoundByNameError            = model.ErrorOf(20015, "用户未找到")
+	AddFriendSameError                 = model.ErrorOf(20016, "已经是好友了, 无需再次添加")
+	AddFriendRequestNotFoundError      = model.ErrorOf(20017, "该好友没有向你发送过添加好友请求")
 )

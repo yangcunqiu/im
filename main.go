@@ -183,6 +183,7 @@ func syncTable() {
 		&model.UserLoginInfo{},
 		&model.District{},
 		&model.CallLog{},
+		&model.FriendRequest{},
 	)
 	if err != nil {
 		panic(err)

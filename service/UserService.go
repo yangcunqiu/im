@@ -437,7 +437,53 @@ func AddFriend(c *gin.Context) {
 		return
 	}
 
+	var friendRequestId uint
+	// 查下之前有没有发过
+	req, ok := dao.GetFriendRequestByUserid(global.User.ID, addFriend.UserId)
+	if ok {
+		friendRequestId = req.ID
+		// 之前发过请求
+		switch req.Status {
+		case model.Pass:
+			// 通过
+			handler.Fail(c, handler.AddFriendSameError, "")
+			return
+		default:
+			// 只修改备注
+			dao.UpdateFriendRequestNoteById(friendRequestId, addFriend.Note)
+		}
+	} else {
+		// 存表
+		friendRequest := &model.FriendRequest{
+			SenderUserId: global.User.ID,
+			TargetUserId: addFriend.UserId,
+			Note:         addFriend.Note,
+			Status:       model.Temp,
+		}
+		dao.AddFriendRequest(friendRequest)
+		friendRequestId = friendRequest.ID
+	}
+
 	// 发送添加好友请求
-	ws.AddFriend(&global.User, addFriend.UserId)
+	ws.AddFriend(&global.User, addFriend.UserId, friendRequestId)
 	handler.Success(c, "")
 }
+
+//func PassFriendRequest(c *gin.Context) {
+//	targetUserIdStr := c.Query("/targetUserId")
+//	targetUserId, _ := strconv.Atoi(targetUserIdStr)
+//
+//	// 查询是否有这个好友请求
+//	req, ok := dao.GetFriendRequestByUserid(global.User.ID, uint(targetUserId))
+//	if !ok {
+//		handler.Fail(c, handler.AddFriendRequestNotFoundError, "")
+//		return
+//	}
+//
+//	// 修改状态
+//
+//	// 向发起者回复
+//
+//	// 添加好友
+//
+//}

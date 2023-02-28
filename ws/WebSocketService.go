@@ -1,13 +1,18 @@
 package ws
 
 import (
+	"context"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"im/dao"
 	"im/global"
 	"im/handler"
 	"im/model"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 var upGrader = websocket.Upgrader{
@@ -51,26 +56,42 @@ func WsHandler(c *gin.Context) {
 	}
 }
 
-func AddFriend(sender *model.User, targetUserId uint) {
+func AddFriend(sender *model.User, targetUserId uint, friendRequestId uint) {
+	friendRequest := dao.GetFriendRequestById(friendRequestId)
 	addFriendReq := AddFriendReq{
 		SenderId:   sender.ID,
 		SenderName: sender.Name,
+		Note:       friendRequest.Note,
 	}
 
 	conn := wsServer.getCoonByUserId(targetUserId)
 	if conn != nil {
-		send(conn, addFriendReq)
+		if err := send(conn, addFriendReq); err != nil {
+			dao.UpdateFriendRequestStatusById(friendRequestId, model.SendFail)
+		}
 	} else {
-		// TODO 用户不在线, 暂存, 上线时推送
+		// 用户不在线, 上线时推送
+		dao.UpdateFriendRequestStatusById(friendRequestId, model.OffLine)
+
+		key := "mm/temp-" + strconv.Itoa(int(targetUserId))
+		m := model.TempMessage[model.TempAddFriend]{
+			Type:           1,
+			SendTime:       time.Now(),
+			SenderUserId:   sender.ID,
+			SenderUserName: sender.Name,
+			TargetUserId:   targetUserId,
+			Message: model.TempAddFriend{
+				Note: friendRequest.Note,
+			},
+		}
+		bytes, _ := json.Marshal(m)
+		global.RDB.Set(context.Background(), key, string(bytes), time.Duration(-1)*time.Minute)
 	}
 }
 
-func send(targetCoon *websocket.Conn, any any) {
+func send(targetCoon *websocket.Conn, any any) error {
 	//err := targetCoon.WriteJSON(any)
-	err := targetCoon.WriteJSON(any)
-	if err != nil {
-		log.Println("发送失败, err: ", err)
-	}
+	return targetCoon.WriteJSON(any)
 }
 
 func sendAloneChat() {
