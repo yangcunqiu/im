@@ -5,5 +5,4 @@ type ClientMessage struct {
 	Type         int    `json:"type,omitempty"`
 	TargetUserId uint   `json:"targetUserId,omitempty"`
 	Content      string `json:"content,omitempty"`
-	SenderUserId uint   `json:"senderUserId,omitempty"`
 }

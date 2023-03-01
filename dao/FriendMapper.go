@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 	"im/global"
 	"im/model"
+	"im/model/vo"
 )
 
 func AddFriend(friend model.Friend) {
@@ -18,4 +19,10 @@ func GetFriendByUserIdAndTargetUserId(userId uint, targetUserId uint) (*model.Fr
 		return nil, false
 	}
 	return &f, true
+}
+
+func GetFriendListByUserId(userId uint) []vo.UserFriendVO {
+	f := make([]vo.UserFriendVO, 0)
+	global.DB.Raw("select u.id FriendId, u.name FriendName from `user` u left join friend f on f.friend_user_id = u.id where f.user_id = ?", userId).Scan(&f)
+	return f
 }

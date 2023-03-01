@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/jinzhu/copier"
 	"im/dao"
 	"im/global"
 	"im/handler"
+	"im/middlewares"
 	"im/model"
 	"log"
 	"net/http"
@@ -55,12 +57,14 @@ func WsHandler(c *gin.Context) {
 		global.RDB.Del(context.Background(), key)
 	}
 
+	go processTempChat(ws)
+
 	for {
 		// 读取客户端数据
 		mt, message, err := ws.ReadMessage()
-		log.Println("--------messageType", mt)
+		middlewares.ValidationToken()(c)
+		log.Println("当前发送消息用户, userId: ", global.User.ID)
 		if mt == -1 {
-			// 离线
 			wsServer.logout <- global.User.ID
 		}
 		if err != nil {
@@ -68,18 +72,33 @@ func WsHandler(c *gin.Context) {
 		}
 		cm := ClientMessage{}
 		json.Unmarshal(message, &cm)
-		user, _ := dao.GetUser(cm.SenderUserId)
-		go processClientMessage(&cm, user, ws)
+		go processClientMessage(&cm, &global.User, ws)
 	}
 }
 
-func processClientMessage(cm *ClientMessage, user *model.User, userConn *websocket.Conn) {
-	_, ok := dao.GetFriendByUserIdAndTargetUserId(user.ID, cm.TargetUserId)
-	if !ok {
-		userConn.WriteMessage(1, []byte("对方不是你的好友, 请先添加好友再聊天吧"))
-		return
+func processTempChat(ws *websocket.Conn) {
+	key := "tempChat-" + strconv.Itoa(int(global.User.ID))
+	tempMessage, _ := global.RDB.Get(context.Background(), key).Result()
+	if tempMessage != "" {
+		msgList := make([]Message, 0)
+		json.Unmarshal([]byte(tempMessage), &msgList)
+		for _, msg := range msgList {
+			send(ws, msg)
+		}
+		// 删掉
+		global.RDB.Del(context.Background(), key)
 	}
+
+}
+
+func processClientMessage(cm *ClientMessage, user *model.User, userConn *websocket.Conn) {
 	if cm.Type == 1 {
+		_, ok := dao.GetFriendByUserIdAndTargetUserId(user.ID, cm.TargetUserId)
+		if !ok {
+			userConn.WriteMessage(1, []byte("对方不是你的好友, 请先添加好友再聊天吧"))
+			return
+		}
+
 		msg := Message{
 			Type:           1,
 			SenderUserId:   user.ID,
@@ -88,34 +107,28 @@ func processClientMessage(cm *ClientMessage, user *model.User, userConn *websock
 			Context:        cm.Content,
 			TargetUserId:   cm.TargetUserId,
 		}
-		cmsg := model.ChatMessage{
-			Type:           1,
-			SenderUserId:   user.ID,
-			SenderUserName: user.Name,
-			SendTime:       time.Now(),
-			Context:        cm.Content,
-			TargetUserId:   cm.TargetUserId,
-		}
+
+		cmsg := model.ChatMessage{}
+		copier.Copy(&cmsg, &msg)
 		dao.AddChatMessage(&cmsg)
-		bytes, _ := json.Marshal(msg)
 
 		conn := wsServer.getCoonByUserId(cm.TargetUserId)
 		if conn != nil {
 			send(conn, msg)
 		} else {
 			// 暂存
-			messageList := make([]string, 0)
+			messageList := make([]Message, 0)
 
 			key := "tempChat-" + strconv.Itoa(int(cm.TargetUserId))
 			tempMessage, _ := global.RDB.Get(context.Background(), key).Result()
 			if tempMessage != "" {
 				json.Unmarshal([]byte(tempMessage), &messageList)
-				messageList = append(messageList, string(bytes))
+				messageList = append(messageList, msg)
 			} else {
-				messageList = append(messageList, string(bytes))
+				messageList = append(messageList, msg)
 			}
 			marshal, _ := json.Marshal(messageList)
-			global.RDB.Set(context.Background(), string(marshal), &messageList, time.Duration(-1)*time.Minute)
+			global.RDB.Set(context.Background(), key, string(marshal), time.Duration(-1)*time.Minute)
 		}
 	}
 }

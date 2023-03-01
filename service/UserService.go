@@ -503,3 +503,9 @@ func ReplyFriendRequest(c *gin.Context) {
 	ws.ReplyAddFriendRequest(&global.User, replyAdd.TargetUserId, replyAdd.Status)
 	handler.Success(c, "")
 }
+
+func GetUserFriendList(c *gin.Context) {
+	userId := global.User.ID
+	listByUserId := dao.GetFriendListByUserId(userId)
+	handler.Success(c, listByUserId)
+}
