@@ -40,17 +40,34 @@ func WsHandler(c *gin.Context) {
 		coon:   ws,
 	}
 	wsServer.login <- &userCoon
+	// 看下redis暂存的消息 有没有当前用户的
+	key := "temp-" + strconv.Itoa(int(global.User.ID))
+	tempMessage, _ := global.RDB.Get(context.Background(), key).Result()
+	if tempMessage != "" {
+		messageList := make([]string, 0)
+		json.Unmarshal([]byte(tempMessage), &messageList)
+		for _, temp := range messageList {
+			if temp != "" {
+				send(ws, temp)
+			}
+		}
+		// 删掉
+		global.RDB.Del(context.Background(), key)
+	}
+
 	for {
 		// 读取客户端数据
 		mt, message, err := ws.ReadMessage()
 		log.Println("--------messageType", mt)
+		if mt == -1 {
+			// 离线
+			wsServer.logout <- global.User.ID
+		}
 		if err != nil {
-			handler.Fail(c, handler.WebSocketConnectionError, "读取失败")
 			break
 		}
 		err = ws.WriteMessage(mt, message)
 		if err != nil {
-			handler.Fail(c, handler.WebSocketConnectionError, "写入失败")
 			break
 		}
 	}
@@ -72,8 +89,6 @@ func AddFriend(sender *model.User, targetUserId uint, friendRequestId uint) {
 	} else {
 		// 用户不在线, 上线时推送
 		dao.UpdateFriendRequestStatusById(friendRequestId, model.OffLine)
-
-		key := "mm/temp-" + strconv.Itoa(int(targetUserId))
 		m := model.TempMessage[model.TempAddFriend]{
 			Type:           1,
 			SendTime:       time.Now(),
@@ -85,12 +100,65 @@ func AddFriend(sender *model.User, targetUserId uint, friendRequestId uint) {
 			},
 		}
 		bytes, _ := json.Marshal(m)
-		global.RDB.Set(context.Background(), key, string(bytes), time.Duration(-1)*time.Minute)
+		messageList := make([]string, 0)
+
+		key := "temp-" + strconv.Itoa(int(targetUserId))
+		tempMessage, _ := global.RDB.Get(context.Background(), key).Result()
+		if tempMessage != "" {
+			json.Unmarshal([]byte(tempMessage), &messageList)
+			messageList = append(messageList, string(bytes))
+		} else {
+			messageList = append(messageList, string(bytes))
+		}
+
+		marshal, _ := json.Marshal(messageList)
+		global.RDB.Set(context.Background(), key, string(marshal), time.Duration(-1)*time.Minute)
 	}
 }
 
+func ReplyAddFriendRequest(replyUser *model.User, targetUserId uint, status int) {
+	replyAddFriend := ReplyAddFriend{
+		ReplyUserId:   replyUser.ID,
+		ReplyUserName: replyUser.Name,
+		Status:        status,
+	}
+
+	conn := wsServer.getCoonByUserId(targetUserId)
+	if conn != nil {
+		send(conn, replyAddFriend)
+	} else {
+		m := model.TempMessage[model.TempReplyAddFriend]{
+			Type:           2,
+			SendTime:       time.Now(),
+			SenderUserId:   replyUser.ID,
+			SenderUserName: replyUser.Name,
+			TargetUserId:   targetUserId,
+			Message: model.TempReplyAddFriend{
+				ReplyUserId:   replyUser.ID,
+				ReplyUserName: replyUser.Name,
+				Status:        status,
+			},
+		}
+		bytes, _ := json.Marshal(m)
+		messageList := make([]string, 0)
+
+		key := "temp-" + strconv.Itoa(int(targetUserId))
+		tempMessage, _ := global.RDB.Get(context.Background(), key).Result()
+		if tempMessage != "" {
+			json.Unmarshal([]byte(tempMessage), &messageList)
+			messageList = append(messageList, string(bytes))
+		} else {
+			messageList = append(messageList, string(bytes))
+		}
+
+		marshal, _ := json.Marshal(messageList)
+		global.RDB.Set(context.Background(), key, string(marshal), time.Duration(-1)*time.Minute)
+	}
+
+}
+
 func send(targetCoon *websocket.Conn, any any) error {
-	//err := targetCoon.WriteJSON(any)
+	// err := targetCoon.WriteJSON(any)
 	return targetCoon.WriteJSON(any)
 }
 

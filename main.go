@@ -184,6 +184,7 @@ func syncTable() {
 		&model.District{},
 		&model.CallLog{},
 		&model.FriendRequest{},
+		&model.Friend{},
 	)
 	if err != nil {
 		panic(err)

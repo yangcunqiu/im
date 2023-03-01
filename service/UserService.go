@@ -469,21 +469,32 @@ func AddFriend(c *gin.Context) {
 	handler.Success(c, "")
 }
 
-//func PassFriendRequest(c *gin.Context) {
-//	targetUserIdStr := c.Query("/targetUserId")
-//	targetUserId, _ := strconv.Atoi(targetUserIdStr)
-//
-//	// 查询是否有这个好友请求
-//	req, ok := dao.GetFriendRequestByUserid(global.User.ID, uint(targetUserId))
-//	if !ok {
-//		handler.Fail(c, handler.AddFriendRequestNotFoundError, "")
-//		return
-//	}
-//
-//	// 修改状态
-//
-//	// 向发起者回复
-//
-//	// 添加好友
-//
-//}
+func ReplyFriendRequest(c *gin.Context) {
+	var replyAdd request.ReplyAddFriendReq
+	if err := c.ShouldBindJSON(&replyAdd); err != nil {
+		handler.Fail(c, handler.ParamsBindingError, "")
+		return
+	}
+
+	// 查询是否有这个好友请求
+	req, ok := dao.GetFriendRequestByUserid(replyAdd.TargetUserId, global.User.ID)
+	if !ok {
+		handler.Fail(c, handler.AddFriendRequestNotFoundError, "")
+		return
+	}
+
+	// 修改状态
+	dao.UpdateFriendRequestStatusById(req.ID, replyAdd.Status)
+	if replyAdd.Status == model.Pass {
+		// 添加好友
+		friend := model.Friend{
+			UserId:       global.User.ID,
+			FriendUserId: replyAdd.TargetUserId,
+		}
+		dao.AddFriend(friend)
+	}
+
+	// 向发起者回复
+	ws.ReplyAddFriendRequest(&global.User, replyAdd.TargetUserId, replyAdd.Status)
+	handler.Success(c, "")
+}
