@@ -5,6 +5,7 @@ import "github.com/gorilla/websocket"
 type WsServer struct {
 	// 用户列表
 	userCoonMap map[uint]*websocket.Conn
+	coonUserMap map[*websocket.Conn]uint
 	login       chan *UserCoon
 	logout      chan uint
 	// 广播消息 用来给所有用户发消息
@@ -14,6 +15,7 @@ type WsServer struct {
 func createWsServer() *WsServer {
 	return &WsServer{
 		userCoonMap: make(map[uint]*websocket.Conn),
+		coonUserMap: make(map[*websocket.Conn]uint),
 		login:       make(chan *UserCoon),
 		logout:      make(chan uint),
 		broadcast:   make(chan []byte),

@@ -492,6 +492,11 @@ func ReplyFriendRequest(c *gin.Context) {
 			FriendUserId: replyAdd.TargetUserId,
 		}
 		dao.AddFriend(friend)
+		friend2 := model.Friend{
+			UserId:       replyAdd.TargetUserId,
+			FriendUserId: global.User.ID,
+		}
+		dao.AddFriend(friend2)
 	}
 
 	// 向发起者回复

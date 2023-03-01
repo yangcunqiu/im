@@ -66,9 +66,56 @@ func WsHandler(c *gin.Context) {
 		if err != nil {
 			break
 		}
-		err = ws.WriteMessage(mt, message)
-		if err != nil {
-			break
+		cm := ClientMessage{}
+		json.Unmarshal(message, &cm)
+		user, _ := dao.GetUser(cm.SenderUserId)
+		go processClientMessage(&cm, user, ws)
+	}
+}
+
+func processClientMessage(cm *ClientMessage, user *model.User, userConn *websocket.Conn) {
+	_, ok := dao.GetFriendByUserIdAndTargetUserId(user.ID, cm.TargetUserId)
+	if !ok {
+		userConn.WriteMessage(1, []byte("对方不是你的好友, 请先添加好友再聊天吧"))
+		return
+	}
+	if cm.Type == 1 {
+		msg := Message{
+			Type:           1,
+			SenderUserId:   user.ID,
+			SenderUserName: user.Name,
+			SendTime:       time.Now(),
+			Context:        cm.Content,
+			TargetUserId:   cm.TargetUserId,
+		}
+		cmsg := model.ChatMessage{
+			Type:           1,
+			SenderUserId:   user.ID,
+			SenderUserName: user.Name,
+			SendTime:       time.Now(),
+			Context:        cm.Content,
+			TargetUserId:   cm.TargetUserId,
+		}
+		dao.AddChatMessage(&cmsg)
+		bytes, _ := json.Marshal(msg)
+
+		conn := wsServer.getCoonByUserId(cm.TargetUserId)
+		if conn != nil {
+			send(conn, msg)
+		} else {
+			// 暂存
+			messageList := make([]string, 0)
+
+			key := "tempChat-" + strconv.Itoa(int(cm.TargetUserId))
+			tempMessage, _ := global.RDB.Get(context.Background(), key).Result()
+			if tempMessage != "" {
+				json.Unmarshal([]byte(tempMessage), &messageList)
+				messageList = append(messageList, string(bytes))
+			} else {
+				messageList = append(messageList, string(bytes))
+			}
+			marshal, _ := json.Marshal(messageList)
+			global.RDB.Set(context.Background(), string(marshal), &messageList, time.Duration(-1)*time.Minute)
 		}
 	}
 }
@@ -160,15 +207,4 @@ func ReplyAddFriendRequest(replyUser *model.User, targetUserId uint, status int)
 func send(targetCoon *websocket.Conn, any any) error {
 	// err := targetCoon.WriteJSON(any)
 	return targetCoon.WriteJSON(any)
-}
-
-func sendAloneChat() {
-
-}
-
-func sendMessage(targetCoon *websocket.Conn, message Message) {
-	err := targetCoon.WriteJSON(message)
-	if err != nil {
-		log.Println("消息发送失败, err:", err)
-	}
 }

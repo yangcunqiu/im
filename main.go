@@ -185,6 +185,7 @@ func syncTable() {
 		&model.CallLog{},
 		&model.FriendRequest{},
 		&model.Friend{},
+		&model.ChatMessage{},
 	)
 	if err != nil {
 		panic(err)

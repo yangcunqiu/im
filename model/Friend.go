@@ -8,3 +8,7 @@ type Friend struct {
 	FriendUserId uint   `gorm:"type:int;not null;comment:用户好友id"`
 	Note         string `gorm:"type:varchar(200);comment:用户的好友备注"`
 }
+
+func (f Friend) TableName() string {
+	return "friend"
+}
